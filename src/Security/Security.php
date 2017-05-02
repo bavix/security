@@ -2,6 +2,8 @@
 
 namespace Bavix\Security;
 
+use Bavix\Exceptions;
+
 class Security
 {
 
@@ -52,7 +54,7 @@ class Security
 
         if (false === $cryptStrong || false === $salt)
         {
-            throw new \RuntimeException('IV generation failed');
+            throw new Exceptions\Runtime('IV generation failed');
         }
 
         $salted = '';
