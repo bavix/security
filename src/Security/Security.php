@@ -4,100 +4,99 @@ namespace Bavix\Security;
 
 use Bavix\Exceptions;
 
-class Security
+class Security extends Cipher
 {
 
-    /**
-     * @var string
-     */
-    protected $password;
+    const ALGORITHM = 'sha256';
 
     /**
-     * @var string
-     */
-    protected $method;
-
-    /**
-     * Security constructor.
-     *
-     * @param string $password
-     * @param string $method
-     */
-    public function __construct($password, $method = 'aes-256-cbc')
-    {
-        $this->password = $password;
-        $this->method   = $method;
-    }
-
-    /**
-     * @param string $data
-     *
-     * @return array
-     */
-    protected function salted($data)
-    {
-        $key = substr($data, 0, 32);
-        $iv  = substr($data, 32, 16);
-
-        return [$key, $iv];
-    }
-
-    /**
-     * @param string $data
+     * @param string $message
      *
      * @return string
      */
-    public function encrypt($data)
+    public function encrypt($message)
     {
+        list(, $authKey) = $this->splitKeys($this->password);
+        $cipherText = parent::encrypt($message);
 
-        $salt = \openssl_random_pseudo_bytes(8, $cryptStrong);
+        $mac = hash_hmac(self::ALGORITHM, $cipherText, $authKey, true);
 
-        if (false === $cryptStrong || false === $salt)
+        return base64_encode($mac . $cipherText);
+    }
+
+    /**
+     * @param string $message
+     *
+     * @return null|string
+     */
+    public function decrypt($message)
+    {
+        list($encKey, $authKey) = $this->splitKeys($this->password);
+
+        $data = \base64_decode($message, true);
+
+        if ($data === false)
         {
             throw new Exceptions\Runtime('IV generation failed');
         }
 
-        $salted = '';
-        $dx     = '';
+        $hash = hash(self::ALGORITHM, '', true);
 
-        while (strlen($salted) < 48)
+        $hs  = mb_strlen($hash, '8bit');
+        $mac = mb_substr($data, 0, $hs, '8bit');
+
+        $cipherText = mb_substr($data, $hs, null, '8bit');
+
+        $calculated = hash_hmac(
+            self::ALGORITHM,
+            $cipherText,
+            $authKey,
+            true
+        );
+
+        if (!$this->hashEquals($mac, $calculated))
         {
-            $dx     = md5($dx . $this->password . $salt, true);
-            $salted .= $dx;
+            return null;
         }
 
-        list($key, $iv) = $this->salted($salted);
-        $encryptedData = openssl_encrypt($data, $this->method, $key, OPENSSL_RAW_DATA, $iv);
-
-        return base64_encode('baVix' . $salt . $encryptedData);
+        // Pass to UnsafeCrypto::decrypt
+        return parent::decrypt($cipherText);
     }
 
     /**
-     * @param string $data
+     * @param $master
      *
-     * @return string
+     * @return array
      */
-    public function decrypt($data)
+    protected function splitKeys($master)
     {
-        $data       = base64_decode($data);
+        return [
+            hash_hmac(self::ALGORITHM, 'ENCRYPTION', $master, true),
+            hash_hmac(self::ALGORITHM, 'AUTHENTICATION', $master, true)
+        ];
+    }
 
-        $salt       = substr($data, 5, 8);
-        $encrypted  = substr($data, 13);
-        $data00     = $this->password . $salt;
-
-        $md5Hash    = [];
-        $md5Hash[0] = md5($data00, true);
-        $result     = $md5Hash[0];
-
-        for ($i = 1; $i < 3; $i++)
+    /**
+     * @param string $first
+     * @param string $second
+     *
+     * @return bool
+     */
+    protected function hashEquals($first, $second)
+    {
+        if (function_exists('hash_equals'))
         {
-            $md5Hash[$i] = md5($md5Hash[$i - 1] . $data00, true);
-            $result      .= $md5Hash[$i];
+            return hash_equals($first, $second);
         }
 
-        list($key, $iv) = $this->salted($result);
+        $nonce = openssl_random_pseudo_bytes(32, $cryptStrong);
 
-        return openssl_decrypt($encrypted, $this->method, $key, true, $iv);
+        if ($nonce !== false && $cryptStrong !== false)
+        {
+            throw new Exceptions\Runtime('IV generation failed');
+        }
+
+        return hash_hmac(self::ALGORITHM, $first, $nonce) === hash_hmac(self::ALGORITHM, $second, $nonce);
     }
 
 }
