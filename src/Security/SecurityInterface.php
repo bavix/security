@@ -6,6 +6,14 @@ interface SecurityInterface
 {
 
     /**
+     * SecurityInterface constructor.
+     *
+     * @param string $password
+     * @param string $method
+     */
+    public function __construct($password, $method = 'aes-256-cbc');
+
+    /**
      * @param string $message
      *
      * @return string

@@ -18,7 +18,7 @@ class Cipher implements SecurityInterface
     protected $method;
 
     /**
-     * Security constructor.
+     * Cipher constructor.
      *
      * @param string $password
      * @param string $method

@@ -18,7 +18,7 @@ class Salted implements SecurityInterface
     protected $method;
 
     /**
-     * Security constructor.
+     * Salted constructor.
      *
      * @param string $password
      * @param string $method
