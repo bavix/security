@@ -31,7 +31,7 @@ class Security extends Cipher
      */
     public function decrypt($message)
     {
-        list($encKey, $authKey) = $this->splitKeys($this->password);
+        list(, $authKey) = $this->splitKeys($this->password);
 
         $data = \base64_decode($message, true);
 
@@ -59,7 +59,6 @@ class Security extends Cipher
             return null;
         }
 
-        // Pass to UnsafeCrypto::decrypt
         return parent::decrypt($cipherText);
     }
 
