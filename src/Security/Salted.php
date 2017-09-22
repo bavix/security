@@ -4,7 +4,7 @@ namespace Bavix\Security;
 
 use Bavix\Exceptions;
 
-class Salted
+class Salted implements SecurityInterface
 {
 
     /**

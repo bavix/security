@@ -4,7 +4,7 @@ namespace Bavix\Security;
 
 use Bavix\Exceptions;
 
-class Cipher
+class Cipher implements SecurityInterface
 {
 
     /**
