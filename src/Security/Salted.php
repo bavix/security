@@ -69,7 +69,7 @@ class Salted
         list($key, $iv) = $this->salted($salted);
         $encryptedData = openssl_encrypt($message, $this->method, $key, OPENSSL_RAW_DATA, $iv);
 
-        return base64_encode('baVix' . $salt . $encryptedData);
+        return base64_encode($salt . $encryptedData);
     }
 
     /**
@@ -86,7 +86,7 @@ class Salted
             throw new Exceptions\Invalid('Invalid `message` on decrypt');
         }
 
-        $salt       = substr($data, 5, 8);
+        $salt       = substr($data, 0,8);
         $encrypted  = substr($data, 13);
         $data00     = $this->password . $salt;
 
