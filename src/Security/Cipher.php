@@ -45,7 +45,7 @@ class Cipher
             throw new Exceptions\Runtime('IV generation failed');
         }
 
-        $cipherText = openssl_encrypt(
+        $cipherText = \openssl_encrypt(
             $message,
             $this->method,
             $this->password,
@@ -67,15 +67,14 @@ class Cipher
 
         if ($data === false)
         {
-            throw new Exceptions\Runtime('Error message decrypt');
+            throw new Exceptions\Invalid('Invalid `message` on decrypt');
         }
 
         $nonceSize  = \openssl_cipher_iv_length($this->method);
-        $nonce      = mb_substr($data, 0, $nonceSize, '8bit');
+        $nonce      = \mb_substr($data, 0, $nonceSize, '8bit');
+        $cipherText = \mb_substr($data, $nonceSize, null, '8bit');
 
-        $cipherText = mb_substr($data, $nonceSize, null, '8bit');
-
-        $plaintext = openssl_decrypt(
+        $plaintext = \openssl_decrypt(
             $cipherText,
             $this->method,
             $this->password,

@@ -16,12 +16,12 @@ class Security extends Cipher
      */
     public function encrypt($message)
     {
-        list(, $authKey) = $this->splitKeys($this->password);
+        $authKey    = $this->authen($this->password);
         $cipherText = parent::encrypt($message);
 
-        $mac = hash_hmac(self::ALGORITHM, $cipherText, $authKey, true);
+        $mac = \hash_hmac(self::ALGORITHM, $cipherText, $authKey, true);
 
-        return base64_encode($mac . $cipherText);
+        return \base64_encode($mac . $cipherText);
     }
 
     /**
@@ -31,30 +31,29 @@ class Security extends Cipher
      */
     public function decrypt($message)
     {
-        list(, $authKey) = $this->splitKeys($this->password);
-
-        $data = \base64_decode($message, true);
+        $authKey = $this->authen($this->password);
+        $data    = \base64_decode($message, true);
 
         if ($data === false)
         {
             throw new Exceptions\Runtime('IV generation failed');
         }
 
-        $hash = hash(self::ALGORITHM, '', true);
+        $hash = \hash(self::ALGORITHM, '', true);
 
-        $hs  = mb_strlen($hash, '8bit');
-        $mac = mb_substr($data, 0, $hs, '8bit');
+        $hs  = \mb_strlen($hash, '8bit');
+        $mac = \mb_substr($data, 0, $hs, '8bit');
 
-        $cipherText = mb_substr($data, $hs, null, '8bit');
+        $cipherText = \mb_substr($data, $hs, null, '8bit');
 
-        $calculated = hash_hmac(
+        $calculated = \hash_hmac(
             self::ALGORITHM,
             $cipherText,
             $authKey,
             true
         );
 
-        if (!$this->hashEquals($mac, $calculated))
+        if (!\hash_equals($mac, $calculated))
         {
             return null;
         }
@@ -63,39 +62,13 @@ class Security extends Cipher
     }
 
     /**
-     * @param $master
+     * @param string $master
      *
-     * @return array
+     * @return string
      */
-    protected function splitKeys($master)
+    protected function authen($master)
     {
-        return [
-            hash_hmac(self::ALGORITHM, 'ENCRYPTION', $master, true),
-            hash_hmac(self::ALGORITHM, 'AUTHENTICATION', $master, true)
-        ];
-    }
-
-    /**
-     * @param string $first
-     * @param string $second
-     *
-     * @return bool
-     */
-    protected function hashEquals($first, $second)
-    {
-        if (function_exists('hash_equals'))
-        {
-            return hash_equals($first, $second);
-        }
-
-        $nonce = openssl_random_pseudo_bytes(32, $cryptStrong);
-
-        if ($nonce !== false && $cryptStrong !== false)
-        {
-            throw new Exceptions\Runtime('IV generation failed');
-        }
-
-        return hash_hmac(self::ALGORITHM, $first, $nonce) === hash_hmac(self::ALGORITHM, $second, $nonce);
+        return \hash_hmac(self::ALGORITHM, 'AUTHENTICATION', $master, true);
     }
 
 }
