@@ -52,11 +52,11 @@ class Password
      *
      * @return bool
      */
-    public function verify(string $password)
+    public function verify(string $password, string $hash)
     {
         return \password_verify(
             $password,
-            $this->algo
+            $hash
         );
     }
 
