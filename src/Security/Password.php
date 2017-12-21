@@ -43,7 +43,7 @@ class Password
         return \password_hash(
             $password,
             $this->algo,
-            $options
+            $this->options
         );
     }
 
